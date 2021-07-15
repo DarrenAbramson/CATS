@@ -1,0 +1,12 @@
+The running accuracy score is 21 out of 50 for add
+add albert:-------------------
+0.391304347826087
+The running accuracy score is 12 out of 50 for del
+del albert:-------------------
+0.2804878048780488
+The running accuracy score is 30 out of 50 for sub
+sub albert:-------------------
+0.5466666666666666
+The running accuracy score is 33 out of 50 for swap
+swap albert:-------------------
+0.6216216216216216

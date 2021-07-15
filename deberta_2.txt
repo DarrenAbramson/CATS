@@ -1,0 +1,14 @@
+Some weights of the model checkpoint at microsoft/deberta-xlarge were not used when initializing DebertaForMaskedLM: ['lm_predictions.lm_head.dense.bias', 'lm_predictions.lm_head.dense.weight', 'lm_predictions.lm_head.bias', 'lm_predictions.lm_head.LayerNorm.weight', 'deberta.embeddings.position_embeddings.weight', 'lm_predictions.lm_head.LayerNorm.bias']
+- This IS expected if you are initializing DebertaForMaskedLM from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DebertaForMaskedLM from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DebertaForMaskedLM were not initialized from the model checkpoint at microsoft/deberta-xlarge and are newly initialized: ['cls.predictions.transform.LayerNorm.bias', 'cls.predictions.decoder.weight', 'cls.predictions.bias', 'cls.predictions.transform.dense.bias', 'cls.predictions.transform.dense.weight', 'cls.predictions.transform.LayerNorm.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+arct_1 deberta:-------------------
+0.527027027027027
+Some weights of the model checkpoint at microsoft/deberta-xlarge were not used when initializing DebertaForMaskedLM: ['lm_predictions.lm_head.LayerNorm.weight', 'lm_predictions.lm_head.LayerNorm.bias', 'lm_predictions.lm_head.bias', 'lm_predictions.lm_head.dense.bias', 'lm_predictions.lm_head.dense.weight', 'deberta.embeddings.position_embeddings.weight']
+- This IS expected if you are initializing DebertaForMaskedLM from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DebertaForMaskedLM from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DebertaForMaskedLM were not initialized from the model checkpoint at microsoft/deberta-xlarge and are newly initialized: ['cls.predictions.transform.dense.bias', 'cls.predictions.bias', 'cls.predictions.transform.LayerNorm.bias', 'cls.predictions.transform.dense.weight', 'cls.predictions.decoder.weight', 'cls.predictions.transform.LayerNorm.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+arct_2 deberta:-------------------
+0.4864864864864865
