@@ -1,6 +1,7 @@
 import torch
 from torch.nn import CrossEntropyLoss
 from transformers import *
+from transformers import DebertaTokenizer, DebertaForMaskedLM
 import numpy as np
 import math
 # OPTIONAL: if you want to have more information on what's happening, activate the logger as follows
@@ -57,6 +58,40 @@ def bert_predict(text, model, tokenizer):
         tokenized_text[masked_index] = masked_word
     sentence_score = sentence_score/length
     return sentence_score
+
+def deberta_predict(text, model, tokenizer):
+    # Tokenized input
+    # text = "[CLS] I got restricted because Tom reported my reply [SEP]"
+    text = "[CLS] " + text + " [SEP]" #special token for BERT, RoBERTa
+    tokenized_text = tokenizer.tokenize(text)
+    sentence_score = 0
+    length = len(tokenized_text)-2
+    for masked_index in range(1,len(tokenized_text)-1):
+        # Mask a token that we will try to predict back with `BertForMaskedLM`
+        masked_word = tokenized_text[masked_index]
+        #tokenized_text[masked_index] = '<mask>' #special token for XLNet
+        tokenized_text[masked_index] = '[MASK]' #special token for BERT, RoBerta
+        # Convert token to vocabulary indices
+        indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+        index = torch.tensor(tokenizer.convert_tokens_to_ids(masked_word))
+        tokens_tensor = torch.tensor([indexed_tokens])
+        tokens_tensor = tokens_tensor.to('cuda')
+        index = index.to('cuda')
+        masked_tensor = torch.tensor([masked_index])
+        with torch.no_grad():
+            outputs = model(tokens_tensor)
+        prediction_scores = outputs[0]
+        prediction_scores = prediction_scores.view(-1, model.config.vocab_size)
+        prediction_scores = prediction_scores[masked_index].unsqueeze(0)
+        loss_fct = CrossEntropyLoss(ignore_index=-1)  # -1 index = padding token
+        masked_lm_loss = loss_fct(prediction_scores, index.view(-1))
+        tokenized_text[masked_index] = masked_word
+        sentence_score -= masked_lm_loss.item()
+        tokenized_text[masked_index] = masked_word
+    sentence_score = sentence_score/length
+    return sentence_score
+
+
 
 def ro_predict(text, model, tokenizer):
     # Tokenized input
@@ -120,10 +155,18 @@ def xlnet_predict(text, model, tokenizer):
 test = sys.argv[1]
 model_type = sys.argv[2]
 robust = sys.argv[3]
+
+
 if model_type=='xlnet':
     # For XLNet
     tokenizer = XLNetTokenizer.from_pretrained('xlnet-large-cased')
     model = XLNetLMHeadModel.from_pretrained('xlnet-large-cased')
+elif model_type=='deberta':
+    tokenizer = DebertaTokenizer.from_pretrained('microsoft/deberta-xlarge', cache_dir=".")
+    model = DebertaForMaskedLM.from_pretrained('microsoft/deberta-xlarge', cache_dir=".") 
+elif model_type=='albert':
+    tokenizer = AlbertTokenizer.from_pretrained('albert-xxlarge-v2', cache_dir=".")
+    model = AlbertForMaskedLM.from_pretrained('albert-xxlarge-v2', cache_dir=".") 
 elif model_type=='bert':
     # For BERT
     tokenizer = BertTokenizer.from_pretrained('bert-large-uncased')
@@ -142,7 +185,7 @@ model.to('cuda')
 model.eval()
 
 if robust=='r':
-    with open("CATS/Robust_commonsense_test/{}.txt".format(test), "r") as f:
+    with open("Robust_commonsense_test/{}.txt".format(test), "r") as f:
         file = f.readlines()
     num = len(file)
     count = 0
@@ -156,7 +199,7 @@ if robust=='r':
             if not len(sentence)==1:
                 if model_type=='xlnet':
                     score = xlnet_predict(sentence, model=model, tokenizer=tokenizer)
-                elif model_type=='bert':
+                elif model_type=='bert' or model_type=="deberta" or model_type=="albert":
                     score = bert_predict(sentence, model=model, tokenizer=tokenizer)
                 elif model_type=='roberta':
                     score = ro_predict(sentence, model=model, tokenizer=tokenizer)
@@ -173,11 +216,14 @@ if robust=='r':
         elif predict_label_1!=label_1 and predict_label_2!=label_2:
             count += 1
         curr += 1
+        if curr % 50 == 0 and curr > 0:
+            sys.stdout.flush()
+            print(f"The running accuracy score is {count} out of {curr} for {test}")
         #print (count, curr, count/curr)
     print(test+' '+model_type+':-------------------')
     print (count/num)
 else:
-    with open("CATS/commonsense_ability_test/{}.txt".format(test), "r") as f:
+    with open("commonsense_ability_test/{}.txt".format(test), "r") as f:
         file = f.readlines()
     num = len(file)
     count = 0
@@ -189,8 +235,10 @@ else:
         for sentence in line[1:]:
             if model_type=='xlnet':
                 score = xlnet_predict(sentence, model=model, tokenizer=tokenizer)
-            elif model_type=='bert':
+            elif model_type=='bert' or model_type=='albert':
                 score = bert_predict(sentence, model=model, tokenizer=tokenizer)
+            elif model_type =="deberta":
+                score = deberta_predict(sentence, model=model, tokenizer=tokenizer)
             elif model_type=='roberta':
                 score = ro_predict(sentence, model=model, tokenizer=tokenizer)
             else:
